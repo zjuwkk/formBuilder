@@ -1,0 +1,174 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv=<"X-UA-Compatible" content="ie=edge">
+    <title>formBuilder</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700,400italic|Material+Icons">
+    <link rel="stylesheet" href="https://unpkg.com/vue-material@beta/dist/vue-material.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/vue-material@beta/dist/theme/default.css">
+</head>
+<script src="https://cdn.bootcss.com/vue/2.5.18-beta.0/vue.js"></script>
+<script src="https://cdn.bootcss.com/vue-resource/1.5.1/vue-resource.js"></script>
+<script src="https://unpkg.com/vue"></script>
+<script src="https://unpkg.com/vue-material@beta"></script>
+ 
+<style>
+body{
+    width: 100vw;
+    display: flex;
+    display: -webkit-flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+}
+</style>
+<body>
+    <div id="app" style="width:70%;">
+        <h1 @click="test">自动生成报名表demo</h1>
+        <elelist
+            :elelistnum="elelistnum" 
+            :initelements="elements"
+            @elementdel="deleteelement"
+        ></elelist>
+        <addarea
+            @addelement="addelement"
+        ></addarea>
+        <md-button class="md-raised md-accent" @click="createform">生成表单</md-button>
+    </div>
+</body>
+</html>
+<template id="elelist">
+    <div>
+        <div v-for='(item,index) in elements' :key="index">
+            <md-field v-if="item.type==='input'">
+                <label>{{item.tag}}</label>
+                <md-input type='text' :key="index"></md-input>
+                <md-button @click="deleteitem(index)" class="md-fab md-mini md-primary">
+                    <md-icon>delete</md-icon>
+                </md-button>
+            </md-field>
+            <md-field v-if="item.type==='text'" :key="index">
+                <p>
+                    {{ item.tag }}
+                </p>
+                <md-button @click="deleteitem(index)" class="md-fab md-mini md-primary">
+                        <md-icon>delete</md-icon>
+                </md-button>
+            </md-field>
+        </div>
+    </div>
+</template>
+<template id="addarea">
+    <div>
+        <md-field>
+            <md-input type="text" v-model="textinput"></md-input> 
+            <md-button class="md-raised md-primary" @click="addelement('input')">增加 input</md-button>
+            <md-button class="md-raised md-primary" @click="addelement('text')">增加 text</md-button>
+        </md-field>
+    </div>
+</template>
+<script>
+    Vue.use(VueMaterial.default)
+
+    var Addarea = {
+        data: function(){
+            return {
+                textinput: '填写默认值'
+            }
+        },
+        template: '#addarea',
+        methods: {
+            addelement: function(type){
+                var textinput = this.textinput;
+                console.log("add type:",type);
+                console.log("inputtext:",textinput);
+                this.$emit("addelement",{
+                    type: type,
+                    text: textinput
+                })
+                this.textinput = ''
+            }
+        }
+    }
+    var Elelist = {
+        props: {
+            elelistnum: Number,
+            initelements: Array
+        },
+        data: function(){
+            return {
+                elements: this.initelements
+            }
+        },
+        template: '#elelist',
+        methods: {
+            deleteitem: function(index){
+                console.log('delete:',index);
+                this.$emit("elementdel",{index: index});
+            }
+        }
+    }
+    var app = new Vue({
+        el: "#app",
+        components: {
+            'elelist': Elelist,
+            'addarea': Addarea
+        },
+        data: {
+            elelistnum: 3,
+            elements: [
+                {
+                    type: 'input',
+                    tag: 'aa'
+                },
+                {
+                    type: 'input',
+                    tag: 'bb'
+                },
+                {
+                    type: 'text',
+                    tag: 'cc'
+                }
+            ]
+        },
+        methods: {
+            deleteelement: function(data){
+                console.log(data);
+                var index = data.index;
+                this.elements.splice(index,1);
+            },
+            addelement: function(data){
+                var newobject = {
+                    type: data.type,
+                    tag: data.text
+                }
+                this.elements.push(newobject);
+            },
+            createform: function(){
+                var origindata = [];
+                this.elements.forEach(item => {
+                    origindata.push({
+                        type: item.type,
+                        tag: item.tag
+                    })
+                });
+                console.log(origindata);
+                this.$http.post(
+                    'http://localhost:3000/formbuilder/create', 
+                    {
+                        data: origindata
+                    },
+                )
+                .then(function(res) {
+                    console.log(res)
+                });
+            },
+            test: function(){
+                console.log("test function ok!");
+            }
+        }
+    })
+</script>
+
+

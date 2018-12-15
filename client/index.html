@@ -1,0 +1,152 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv=<"X-UA-Compatible" content="ie=edge">
+    <title>formBuilder</title>
+</head>
+<script src="https://cdn.bootcss.com/vue/2.5.18-beta.0/vue.js"></script>
+<script src="https://cdn.bootcss.com/vue-resource/1.5.1/vue-resource.js"></script>
+<body>
+    <div id="app">
+        <p @click="test">test</p>
+        <elelist
+            :elelistnum="elelistnum" 
+            :initelements="elements"
+            @elementdel="deleteelement"
+        ></elelist>
+        <addarea
+            @addelement="addelement"
+        ></addarea>
+        <button @click="createform">生成表单</button>
+    </div>
+</body>
+</html>
+<template id="elelist">
+    <div>
+        <div v-for='(item,index) in elements' :key="index">
+            <input 
+                v-if="item.type==='input'" 
+                type='text' 
+                :placeholder='item.tag'
+            />
+            <p
+                v-if="item.type==='text'"
+            >
+                {{ item.tag }}
+            </p>
+            <button @click="deleteitem(index)">删除</button>
+        </div>
+    </div>
+</template>
+<template id="addarea">
+    <div>
+        <div>
+            <input type="text" v-model="textinput" />
+            <button @click="addelement('input')">增加 input</button>
+            <button @click="addelement('text')">增加 text</button>
+        </div>
+    </div>
+</template>
+<script>
+    var Addarea = {
+        data: function(){
+            return {
+                textinput: '填写默认值'
+            }
+        },
+        template: '#addarea',
+        methods: {
+            addelement: function(type){
+                var textinput = this.textinput;
+                console.log("add type:",type);
+                console.log("inputtext:",textinput);
+                this.$emit("addelement",{
+                    type: type,
+                    text: textinput
+                })
+                this.textinput = ''
+            }
+        }
+    }
+    var Elelist = {
+        props: {
+            elelistnum: Number,
+            initelements: Array
+        },
+        data: function(){
+            return {
+                elements: this.initelements
+            }
+        },
+        template: '#elelist',
+        methods: {
+            deleteitem: function(index){
+                console.log('delete:',index);
+                this.$emit("elementdel",{index: index});
+            }
+        }
+    }
+    var app = new Vue({
+        el: "#app",
+        components: {
+            'elelist': Elelist,
+            'addarea': Addarea
+        },
+        data: {
+            elelistnum: 3,
+            elements: [
+                {
+                    type: 'input',
+                    tag: 'aa'
+                },
+                {
+                    type: 'input',
+                    tag: 'bb'
+                },
+                {
+                    type: 'text',
+                    tag: 'cc'
+                }
+            ]
+        },
+        methods: {
+            deleteelement: function(data){
+                console.log(data);
+                var index = data.index;
+                this.elements.splice(index,1);
+            },
+            addelement: function(data){
+                var newobject = {
+                    type: data.type,
+                    tag: data.text
+                }
+                this.elements.push(newobject);
+            },
+            createform: function(){
+                var origindata = [];
+                this.elements.forEach(item => {
+                    origindata.push({
+                        type: item.type,
+                        tag: item.tag
+                    })
+                });
+                console.log(origindata);
+                this.$http.post(
+                    'http://localhost:3000/formbuilder/create', 
+                    {
+                        data: origindata
+                    },
+                )
+                .then(function(res) {
+                    console.log(res)
+                });
+            },
+            test: function(){
+                console.log("test function ok!");
+            }
+        }
+    })
+</script>
+
+
